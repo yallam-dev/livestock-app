@@ -1,198 +1,102 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
-  StyleSheet,
-  Button,
   FlatList,
+  TouchableOpacity,
   Image,
-  ScrollView, // ✅ make screen scrollable
+  StyleSheet,
+  Dimensions,
 } from 'react-native';
-import RNPickerSelect from 'react-native-picker-select';
-import { useCart } from '../context/CartContext';
 
-export default function AnimalSelectionScreen() {
-  const [selectedAnimal, setSelectedAnimal] = useState(null);
-  const [breed, setBreed] = useState('');
-  const [weight, setWeight] = useState('');
-  const [age, setAge] = useState('');
-  const [inventoryResults, setInventoryResults] = useState([]);
+const animals = [
+  {
+    type: 'Chicken',
+    image: 'https://zbpkanclylupxxfxtbwu.supabase.co/storage/v1/object/public/animal-images//Chicken.png',
+  },
+  {
+    type: 'Turkey',
+    image: 'https://zbpkanclylupxxfxtbwu.supabase.co/storage/v1/object/public/animal-images//Turkey.png',
+  },
+  {
+    type: 'Goat',
+    image: 'https://zbpkanclylupxxfxtbwu.supabase.co/storage/v1/object/public/animal-images//Goat.png',
+  },
+  {
+    type: 'Lamb',
+    image: 'https://zbpkanclylupxxfxtbwu.supabase.co/storage/v1/object/public/animal-images//Lamb.png',
+  },
+];
 
-  const { addToCart } = useCart();
-
-  const animalOptions = ['Chicken', 'Turkey', 'Goat', 'Lamb'];
-  const breedsByAnimal = {
-    Chicken: ['Desi', 'Broiler'],
-    Turkey: ['White', 'Bronze'],
-    Goat: ['Boer', 'Nubian', 'Kiko'],
-    Lamb: ['Dorper', 'Katahdin', 'Merino'],
-  };
-
-  const createPickerItems = (items) =>
-    items.map((item) => ({ label: item, value: item }));
-
-  const handleSearch = () => {
-    const mockInventory = [
-      {
-        id: Math.random().toString(),
-        animal: selectedAnimal,
-        breed,
-        weight,
-        age,
-        image: 'https://placekitten.com/200/200',
-      },
-      {
-        id: Math.random().toString(),
-        animal: selectedAnimal,
-        breed,
-        weight,
-        age,
-        image: 'https://placekitten.com/201/200',
-      },
-    ];
-    setInventoryResults(mockInventory);
-  };
-
-  const handleAddToCart = (item) => {
-    addToCart(item);
-    console.log('Added to cart:', item);
+export default function AnimalSelectionScreen({ navigation }) {
+  const handleAnimalPress = (animalType) => {
+    navigation.navigate('BreedSelection', { animalType });
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.image} />
-      <Text style={styles.cardText}>Breed: {item.breed}</Text>
-      <Text style={styles.cardText}>Weight: {item.weight}</Text>
-      <Text style={styles.cardText}>Age: {item.age}</Text>
-      <Button title="Add to Cart" onPress={() => handleAddToCart(item)} />
-    </View>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => handleAnimalPress(item.type)}
+    >
+      <Image
+        source={{ uri: item.image }}
+        style={styles.image}
+        resizeMode="contain"
+      />
+      <Text style={styles.label}>{item.type}</Text>
+    </TouchableOpacity>
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>Select an Animal</Text>
-
-      {animalOptions.map((animal) => (
-        <TouchableOpacity
-          key={animal}
-          style={[
-            styles.option,
-            selectedAnimal === animal && styles.selectedOption,
-          ]}
-          onPress={() => {
-            setSelectedAnimal(animal);
-            setBreed('');
-            setWeight('');
-            setAge('');
-            setInventoryResults([]);
-          }}
-        >
-          <Text style={styles.optionText}>{animal}</Text>
-        </TouchableOpacity>
-      ))}
-
-      {selectedAnimal && (
-        <View style={styles.selects}>
-          <Text style={styles.subheading}>Breed:</Text>
-          <RNPickerSelect
-            onValueChange={setBreed}
-            placeholder={{ label: 'Select breed...', value: '' }}
-            items={createPickerItems(breedsByAnimal[selectedAnimal])}
-            value={breed}
-          />
-
-          <Text style={styles.subheading}>Weight Range:</Text>
-          <RNPickerSelect
-            onValueChange={setWeight}
-            placeholder={{ label: 'Select weight...', value: '' }}
-            items={createPickerItems(['1-2 lbs', '2-4 lbs', '4-6 lbs', '6+ lbs'])}
-            value={weight}
-          />
-
-          <Text style={styles.subheading}>Age Range:</Text>
-          <RNPickerSelect
-            onValueChange={setAge}
-            placeholder={{ label: 'Select age...', value: '' }}
-            items={createPickerItems(['1-2 months', '2-4 months', '4-6 months', '6+ months'])}
-            value={age}
-          />
-
-          <View style={{ marginTop: 20 }}>
-            <Button
-              title="Search Inventory"
-              onPress={handleSearch}
-              disabled={false}
-            />
-          </View>
-        </View>
-      )}
-
-      {inventoryResults.length > 0 && (
-        <View style={styles.results}>
-          <Text style={styles.subheading}>Matching Inventory:</Text>
-          <FlatList
-            data={inventoryResults}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            scrollEnabled={false} // 🔒 FlatList won't fight ScrollView
-          />
-        </View>
-      )}
-    </ScrollView>
+      <FlatList
+        data={animals}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.type}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
+    </View>
   );
 }
 
+const screenWidth = Dimensions.get('window').width;
+const cardSize = (screenWidth - 48) / 2;
+
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    paddingBottom: 100,
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingTop: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 16,
+    textAlign: 'center',
   },
-  option: {
-    padding: 15,
-    backgroundColor: '#eee',
-    marginBottom: 10,
-    borderRadius: 8,
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  selectedOption: {
-    backgroundColor: '#cce5ff',
+  card: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 12,
+    width: cardSize,
+    alignItems: 'center',
+    overflow: 'hidden',
   },
-  optionText: {
-    fontSize: 18,
+  image: {
+    width: cardSize,
+    height: cardSize,
   },
-  selects: {
-    marginTop: 30,
-  },
-  subheading: {
-    marginTop: 20,
+  label: {
+    padding: 10,
     fontWeight: 'bold',
     fontSize: 16,
   },
-  results: {
-    marginTop: 30,
-  },
-  card: {
-    backgroundColor: '#fff',
-    padding: 15,
-    marginVertical: 10,
-    borderRadius: 8,
-    elevation: 2,
-  },
-  image: {
-    width: '100%',
-    height: 150,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  cardText: {
-    marginBottom: 5,
-  },
 });
-
-
 
