@@ -1,3 +1,4 @@
+// Connected to GitHub
 import React from 'react';
 import {
   View,
@@ -26,6 +27,7 @@ const animals = [
     type: 'Lamb',
     image: 'https://zbpkanclylupxxfxtbwu.supabase.co/storage/v1/object/public/animal-images//Lamb.png',
   },
+  
 ];
 
 export default function AnimalSelectionScreen({ navigation }) {
