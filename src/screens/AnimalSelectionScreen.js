@@ -1,51 +1,49 @@
-// Connected to GitHub
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
-  Image,
   StyleSheet,
-  Dimensions,
+  Image,
+  TouchableOpacity,
 } from 'react-native';
+import { supabase } from '../lib/supabase';
+import { useNavigation } from '@react-navigation/native';
 
-const animals = [
-  {
-    type: 'Chicken',
-    image: 'https://zbpkanclylupxxfxtbwu.supabase.co/storage/v1/object/public/animal-images//Chicken.png',
-  },
-  {
-    type: 'Turkey',
-    image: 'https://zbpkanclylupxxfxtbwu.supabase.co/storage/v1/object/public/animal-images//Turkey.png',
-  },
-  {
-    type: 'Goat',
-    image: 'https://zbpkanclylupxxfxtbwu.supabase.co/storage/v1/object/public/animal-images//Goat.png',
-  },
-  {
-    type: 'Lamb',
-    image: 'https://zbpkanclylupxxfxtbwu.supabase.co/storage/v1/object/public/animal-images//Lamb.png',
-  },
-  
-];
+export default function AnimalSelectionScreen() {
+  const [animals, setAnimals] = useState([]);
+  const navigation = useNavigation();
 
-export default function AnimalSelectionScreen({ navigation }) {
-  const handleAnimalPress = (animalType) => {
-    navigation.navigate('BreedSelection', { animalType });
+  useEffect(() => {
+    const fetchAnimals = async () => {
+      const { data, error } = await supabase.from('animals').select('*');
+      if (error) {
+        console.error('Error fetching animals:', error);
+      } else {
+        console.log('🐔 Animal data from Supabase:', data); // ✅ DEBUG LOG
+        setAnimals(data);
+      }
+    };
+    fetchAnimals();
+  }, []);
+
+  const handleAnimalPress = (animal) => {
+    console.log('➡️ Navigating to BreedSelectionScreen with:', animal.id); // ✅ DEBUG LOG
+    navigation.navigate('BreedSelectionScreen', { animalType: animal.id });
   };
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => handleAnimalPress(item.type)}
+      onPress={() => handleAnimalPress(item)}
     >
       <Image
-        source={{ uri: item.image }}
+        source={{
+          uri: `https://zbpkanclylupxxfxtbwu.supabase.co/storage/v1/object/public/animal-images/${item.name}V2.png`,
+        }}
         style={styles.image}
-        resizeMode="contain"
       />
-      <Text style={styles.label}>{item.type}</Text>
+      <Text style={styles.animalName}>{item.name}</Text>
     </TouchableOpacity>
   );
 
@@ -55,17 +53,13 @@ export default function AnimalSelectionScreen({ navigation }) {
       <FlatList
         data={animals}
         renderItem={renderItem}
-        keyExtractor={(item) => item.type}
+        keyExtractor={(item) => item.id}
         numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={styles.list}
       />
     </View>
   );
 }
-
-const screenWidth = Dimensions.get('window').width;
-const cardSize = (screenWidth - 48) / 2;
 
 const styles = StyleSheet.create({
   container: {
@@ -80,25 +74,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  row: {
+  list: {
     justifyContent: 'space-between',
-    marginBottom: 16,
   },
   card: {
+    flex: 1,
+    margin: 10,
     backgroundColor: '#f0f0f0',
     borderRadius: 12,
-    width: cardSize,
+    padding: 10,
     alignItems: 'center',
-    overflow: 'hidden',
+    elevation: 2,
   },
   image: {
-    width: cardSize,
-    height: cardSize,
+    width: 120,
+    height: 120,
+    resizeMode: 'contain',
+    marginBottom: 10,
   },
-  label: {
-    padding: 10,
-    fontWeight: 'bold',
-    fontSize: 16,
+  animalName: {
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
-

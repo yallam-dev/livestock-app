@@ -1,95 +1,92 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 
-const AgeWeightFilterScreen = ({ route, navigation }) => {
-  const { animalType, breed } = route.params;
-  const [ageOptions, setAgeOptions] = useState([]);
-  const [weightOptions, setWeightOptions] = useState([]);
-  const [selectedAge, setSelectedAge] = useState('');
-  const [selectedWeight, setSelectedWeight] = useState('');
+export default function WeightSelectionScreen({ route }) {
+  const { animalType, selectedBreeds } = route.params;
+  const [weights, setWeights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigation = useNavigation();
 
   useEffect(() => {
-    const loadOptions = async () => {
-      const { data } = await supabase
-        .from('inventory')
-        .select('age_range, weight_range')
-        .eq('animal', animalType)
-        .eq('breed', breed);
+    const fetchWeights = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('weights')
+        .select('*')
+        .eq('animal_id', animalType);
 
-      setAgeOptions([...new Set(data.map((item) => item.age_range))]);
-      setWeightOptions([...new Set(data.map((item) => item.weight_range))]);
+      if (error) {
+        console.error('Error fetching weights:', error);
+        setWeights([]);
+      } else {
+        setWeights(data);
+      }
+      setLoading(false);
     };
-    loadOptions();
-  }, []);
 
-  const handleSearch = () => {
-    navigation.navigate('InventoryList', {
+    fetchWeights();
+  }, [animalType]);
+
+  const handleWeightSelect = (weightId) => {
+    navigation.navigate('AgeWeightFilter', {
       animalType,
-      breed,
-      age_range: selectedAge,
-      weight_range: selectedWeight,
+      selectedBreeds,
+      selectedWeights: [weightId],
     });
   };
 
+  const renderItem = ({ item }) => (
+    <TouchableOpacity style={styles.card} onPress={() => handleWeightSelect(item.id)}>
+      <Text style={styles.weightText}>{item.range}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Choose Age & Weight</Text>
-      <Text style={styles.subtitle}>Age Range</Text>
-      {ageOptions.map((age) => (
-        <TouchableOpacity
-          key={age}
-          style={[styles.option, selectedAge === age && styles.selected]}
-          onPress={() => setSelectedAge(age)}
-        >
-          <Text>{age}</Text>
-        </TouchableOpacity>
-      ))}
-      <Text style={styles.subtitle}>Weight Range</Text>
-      {weightOptions.map((weight) => (
-        <TouchableOpacity
-          key={weight}
-          style={[styles.option, selectedWeight === weight && styles.selected]}
-          onPress={() => setSelectedWeight(weight)}
-        >
-          <Text>{weight}</Text>
-        </TouchableOpacity>
-      ))}
-      <TouchableOpacity
-        style={styles.searchButton}
-        onPress={handleSearch}
-        disabled={!selectedAge || !selectedWeight}
-      >
-        <Text style={styles.searchText}>View Inventory</Text>
-      </TouchableOpacity>
+      <Text style={styles.title}>Select Weight Range</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#000" />
+      ) : (
+        <FlatList
+          data={weights}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingBottom: 50 }}
+        />
+      )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
-  subtitle: { fontSize: 18, marginTop: 16, marginBottom: 6 },
-  option: {
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#eee',
-    marginBottom: 8,
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
   },
-  selected: {
-    backgroundColor: '#cde',
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
-  searchButton: {
-    backgroundColor: '#333',
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 24,
+  card: {
+    backgroundColor: '#e0f0ff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    alignItems: 'center',
   },
-  searchText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '600',
+  weightText: {
+    fontSize: 18,
+    fontWeight: '500',
   },
 });
-
-export default AgeWeightFilterScreen;
